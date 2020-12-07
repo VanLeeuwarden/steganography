@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Image Steganography</title>
+	<link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+	<div>
+		<h1>Image Steganography Overview</h1>
+	</div>
+
+	<section>
+		<h2>Introduction</h2>
+
+		<p>Steganography is the practice of hiding information within a file such as text, audio, image or video. This is separate from cryptography, which makes a message indecipherable to an eavesdropper instead of concealing its existence.</p>
+
+		<p>My personal fascination with the subject began with an example of computer text steganography. The MMO game Eve Online is known for its players' intense commitment. One group started a private forum to discuss secret strategies but, as is typical of the game, the forum was infiltrated by a spy who would proceed to leak these plans rendering them useless. They had to be stopped somehow.</p>
+
+		<p>The solution is clever. To find the mole, the admins altered each forum post based on the id of the logged in user. Every forum post a user saw was padded with zero-width characters encoding their user id in binary. Zero-width characters are unicode symbols that do not show up visibly on the screen yet are valid text. So when the spy copy-pasted some plans for the public to see, they also uknowingly included the secret characters that gave away their identity. The spy was successfully banned and the group could continue to scheme in privacy.</p>
+
+		<p>This may seem like an amusing story of games going to extreme lengths but the same techniques are used in the real world. As an example, leaked documents can be similarly fingerprinted and journalists have to be careful to no expose their sources when publishing docuemnts. Still, pure text steganography comprises only very few techniques. To dive deeper, I give an overview of how binary data can be hidden in images and the drawbacks of these methods. These methods are the basis for more complicated schemes and can be repurposed to use different media as well.</p>
+	</section>
+
+	<div class="break"></div>
+
+	<section>
+		<h2>Least Significant Bit Embedding</h2>
+
+		<p>The most illustrative example of this technique is embedding one image into another, same sized image. Unsurprisingly, such an embedding is lossy byt it does demonstrate that visually significant infromation can be stored and later, recovered.</p>
+
+		<div class="img-container">
+			<img src="lsbe.png" />
+		</div>
+
+		<p>Say we want to embed a secret image S into a target image T, both the same size and grayscale. Least significant bit embedding (LSBE) works by taking a pixel in T and zeroing out the least significant bit. This space is then given to the most significant bit of S (more precisely, the bit of the pixel in the same location).</p>
+
+		<p>The effect is as follows. The accuracy of T is changed as little as possible to make room for the best  approximation of S. This process is straightforward and has some natural generalizations. We can do this with coloured images on a per-channel basis or use more than one bit at the cost of distorting the target image.</p>
+
+		<p>The real kicker is that instead of embedding one image into another, we can encode arbitrary binary data. Traverse the pixels in some order and change the least significant bit to match your data.</p>
+
+		<p>Reversing this process is easy. To find a secret in the image we just look at its least signficiant bits and discard the rest. Though straightforward, the receiver of the image needs to know how many bits to looks for and how the pixels are ordered.</p>
+	</section>
+
+	<div class="break"></div>
+
+	<section>
+		<h2>Histogram Shifting</h2>
+
+		<p>One of the problems with LSBE is that it is inherently lossy - the target image quality is sacrificed. As well, to preserve the illusion that an LSBE affected image looks normal, the target image should be fairly busy. What I mean is, an image with large whitespace regions would show a faint outline of the data and potentially give away the fact that it carries secret information.</p>
+
+		<p>To avoid these issues, we instead embedd data into sections of activity while altering the image's appearance even less.</p>
+
+		<p>The first step is to construct a histogram of the values found in the image. In a grey-scale 8-bit image, a pixel can take on intensities between <span class="accent">0</span> and <span class="accent">2<span class="superscript">8</span>-1</span> and we count how many times each value appears in the image.</p>
+
+		<p>Now, for simplicity, assume that the resulting histogram has a unique maximum <span class="accent">H<span class="subscript">max</span></span> (that is, the count of the pixel intensity that appears most often, not the largest bit value) and a unique minumum equal <span class="accent">H<span class="subscript">min</span></span> to zero.</p>
+
+		<div class="img-container">
+			<img src="historgram_shift.png" />
+		</div>
+
+		<p>Operate on the histogram as follows. Shift the pixel values exclusively between <span class="accent">H<span class="subscript">max</span></span> and <span class="accent">H<span class="subscript">min</span></span> one unit in the direction of the zero. This leaves the <span class="accent">H<span class="subscript">max</span></span> column intact but reduces the intensity of the pixels between <span class="accent">H<span class="subscript">max</span></span> and <span class="accent">H<span class="subscript">min</span></span> by <span class="accent">1</span>; such an effect is not easily noticeable in a photograph.</p>
+
+		<p>The payoff of this operation is that now we can embed <span class="accent">H<span class="subscript">max</span></span> number of bits into the image in a lossless manner. Observer that there are no pixels with value <span class="accent">H<span class="subscript">max</span> - 1</span>. Traverse the image in some predefined order. We encode a bit B whenever the pixel value is equal to <span class="accent">H<span class="subscript">max</span></span>. If B is <span class="accent">0</span>, set the pixel value to be <span class="accent">H<span class="subscript">max</span> - 1</span>. Otherwise, keep the pixel value at <span class="accent">H<span class="subscript">max</span></span> to encode a <span class="accent">1</span>.</p>
+
+		<p>For the inverse process, one traverses the image in the same order as it was modified; if a pixel has value either <span class="accent">H<span class="subscript">max</span></span> or <span class="accent">H<span class="subscript">max</span> - 1</span> then one knows whether to recover a <span class="accent">0</span> or a <span class="accent">1</span>. Moreover, no information was destroyed during histogram shifting. All the pixels can be shifted back to their original intensities, allowing for lossless recovery of the original image. Neat!</p>
+
+		<p>For someone else to recover data from the image, the original peak values must be sent over in addition to the image. This poses an additional challenge. In practice, if <span class="accent">H<span class="subscript">max</span></span> is not unique, we have to choose one of the peaks as the maximum. Similarly, <span class="accent">H<span class="subscript">min</span></span> might not be unique. It also might not be zero, so we would have to irrecoverably destory some bits and as such cannot recover the original in a lossless manner. However, this might be a reasonable trade-off, depending on the purpose to which steganography was used.</p>
+	</section>
+
+	<div class="break"></div>
+
+	<section>
+		<h2>JPEG Steganography</h2>
+
+		<p>The methods desribed above work for bitmap images in formats such as .bnp and .png. This is because we have direct control over the pixel values that are naively displayed. However, the frequently used .jpg format applies a series of transformations and compressions to drastically reduce file size while preserving a reasonable quality in appearance. This poses a problem for steganographers because the compression artifacts are likely to alter any data encoded within pixels and make this information irrecoverable. Before we tackle this problem, let's take a quick overview of the JPEG encoding process (emphasis on quick, jpeg compression deserves a tutorial of its own).</p>
+		<div class="inner">
+			<h3>1. Colour Space Transformation</h3>
+
+			<p>The colour channels are converted from the usual RGB channels to YCbCr channels. Y is the brightness which is what human eyesight is most responsive to.
+			Cb and Cr are chrominance channels that account for tone. Since Cb and Cr aren't as visually important, we downsample them to reduce the size of the image.</p>
+			</div>	
+		
+		<div class="inner">
+			<h3>2. Block DCT</h3>
+
+			<p>Channelwise, the new pixels are converted to non-overlapping 8x8 regions and a discrete cosine transform (DCT) is applied to turn them into blocks of frequencies. Low frequencies determine large, unchanging parts of the picture meanwhile high frequencies construct the fine details of the picture. It requires zooming in to see small details thus downsampling or even removing high frequencies alters the picture relatively little on the whole. This further reduces size but, the quality of the JPEG suffers accordingly.</p>
+		</div>
+
+		<div class="inner">
+			<h3>3. Quantization</h3>
+
+			<p>The DCT produces floating point numbers which cannot be encoded in 8 bits. Furthermore, 8x8 regions of a picture are normally concentrated around a single, lower frequency whose amplitude can exceed <span class="accent">2<span class="superscript">8</span></span> and so must be clipped. To preserve image integrity, a quantization table is used that scales the image values based on the pixels' location in the 8x8 block. A particular quantization table is recommended by the JPEG standard but a user supplied table can be used instead. The used table is preserved in the jpeg header.</p>
+		</div>
+
+		<div class="inner">
+			<h3>4. Lossless Compression</h3>
+
+			<p>Lastly, to reduce file size even further, the data is encoded using entropy coding. The Huffman table produced as a result of this is also kept for the file metadata.</p>
+		</div>
+
+		<p>JPEG compression is lossy and so pixels cannot be perfectly reconstructed. Applying steganography before the DCT is particularly unwieldly becuase it change in a single pixel affects all the frequencies in the block in a non-linear way. The easiest place to apply steganographic techniques is after the quantization step. Here we have pixels that will not be altered in any way during the decoding process. The data is already an integer type, and negligible changes here produce negligible changes in the reconstructed image. More nuanced techniques can make use of the fact that the quantization table can be chosen to encode extra data. However, seeing a non-standard table could be a hint that the image contains hidden data.</p>
+	</section>
+
+	<div class="break"></div>
+
+	<section>
+		<h2>Concluding Remarks</h2>
+
+		<p>I have touched upon simple but fundamental ideas in steganography. Much more advanced techniques and algorithms exists than those presented here but, many of them build upon the methods I have outlined.</p>
+
+		<p>The field is burgeoning and is related to other intriguing areas. The counterweight to steganography is steganalysis, which seeks to discern whether a piece of media contains additional, hidden information. To this end, statistical tests are employed. Omitting technical details, arbitrary data (especially if encrypted) is likely to have a uniform distribution of bits. This may not align with natural properties of an image. Hence, statistical tests can be used to judge whether an image has a more even distribution that it ought to.</p>
+
+		<p>As a rebuttal to steganalysis, more complex steganography algorithms are "statistically aware" in the sense that they try to mimick the original distribution of the image to fool these tests.</p>
+
+		<p>Steganography branches into different methods and fields depending on the intended use. In the introduction, I covered fingerprinting which is assigning ID to data in secretive manner. Another related area is watermarking, usually used for the purposes of verifying image authenticity or for asserting intellectual property. Like with steganography, hiding data is equally important for watermarking purposes but instead of optimizing for the amount of data that can be hid, watermarks focus on robustness. A good watermark should be able to survive changes in the medium such as cropping, resizing or compression yet still be identifiable. The essential concept is the same - hiding data - but variants prioritize different properties based on their purpose. I encourage you to read more on this topic or for even more fun, try using steganography in practice.</p>
+	</section>
+
+</body>
+</html>

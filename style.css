@@ -1,0 +1,113 @@
+@font-face{
+	font-family: LabGrotesque;
+	src: url("LabGrotesque-Regular.woff");
+}
+@font-face{
+	font-family: Akkurat;
+	src: url("Akkurat.otf");
+}
+
+:root {
+	--light: #ebebeb;
+	--light-accent: #96a24a;
+	--main: #767d5d;
+	--dark-accent: #908d8e;
+	--dark: #4a4e4a;
+}
+
+body {
+	max-width: 70ch;
+	margin-left: auto;
+	margin-right: auto;
+	background-color: var(--light);
+	color: var(--dark);
+	word-wrap: break-word;
+}
+
+section {
+	padding: 1.75em;
+	background-color: #767d5d0e;
+}
+
+h1 {
+	display: flex;
+	justify-content: center;
+	font-size: 2.01rem;
+	line-height: 2.01rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	line-height: 1.5rem;
+}
+
+h3 {
+	font-size: 1.32rem;
+	line-height: 1.32rem;
+}
+
+
+h1, h2, h3 {
+	margin: 0;
+	padding-top: 0.25em;
+	padding-bottom: 0.33em;
+	font-family: Akkurat;
+}
+
+p {
+	font-family: LabGrotesque;
+	font-size: 1.15em;
+	padding: 0;
+	margin: 0;
+}
+
+img {
+	max-width: 90%;
+}
+
+p + p {
+	margin-top: 0.87em;
+}
+
+.inner {
+	margin-left: 1.75em;
+	margin-right: 1.75em;
+	margin-top: 1.32em;
+	margin-bottom: 1.32em;	
+}
+
+.superscript {
+	vertical-align: super;
+	font-size: 60%;
+	line-height: 100%
+}
+
+.subscript {
+	vertical-align: sub;
+	font-size: 60%;
+	line-height: 100%;
+}
+
+.accent {
+	padding-left: 0.38em;
+	padding-right: 0.38em;
+	background-color: #645d7d13;
+	color: #494d3c;
+	border-radius: 0.25em;
+	white-space: nowrap;
+}
+
+.break {
+	margin-top: 0.87rem;
+	margin-bottom: 0.87rem;
+	border-style: solid;
+	border-image: linear-gradient(to right, var(--light), var(--light-accent), var(--main), var(--light-accent), var(--light)) 1;
+	border-width: 0 0 2px 0;
+}
+
+.img-container {
+	display: flex;
+	justify-content: center;
+	padding-top: 1.15rem;
+	padding-bottom: 1.15rem;
+}
